@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.ProductMapper">
+<resultMap id="ProductSummaryMap" type="com.yl.clothing.entity.projection.ProductSummary" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="code" property="code"/>
+    <result column="name" property="name"/>
+    <result column="description" property="description"/>
+    <result column="categoryId" property="categoryId"/>
+    <result column="deleted" property="deleted"/>
+    <result column="createdAt" property="createdAt"/>
+    <result column="categoryName" property="categoryName"/>
+    <result column="colorCount" property="colorCount"/>
+    <result column="minPrice" property="minPrice"/>
+    <result column="maxPrice" property="maxPrice"/>
+    <result column="onSaleCount" property="onSaleCount"/>
+    <result column="listingCount" property="listingCount"/>
+    <result column="thumbnail" property="thumbnail"/>
+</resultMap>
+<resultMap id="ProductColorMap" type="com.yl.clothing.entity.ProductColor" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="productId" property="productId"/>
+    <result column="name" property="name"/>
+    <result column="hex1" property="hex1"/>
+    <result column="hex2" property="hex2"/>
+    <result column="deleted" property="deleted"/>
+</resultMap>
+<resultMap id="ListingDetailsMap" type="com.yl.clothing.entity.projection.ListingDetails" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="skuId" property="skuId"/>
+    <result column="channelId" property="channelId"/>
+    <result column="price" property="price"/>
+    <result column="onSale" property="onSale"/>
+    <result column="channelName" property="channelName"/>
+    <result column="size" property="size"/>
+    <result column="colorId" property="colorId"/>
+    <result column="colorName" property="colorName"/>
+    <result column="hex1" property="hex1"/>
+    <result column="hex2" property="hex2"/>
+    <result column="productId" property="productId"/>
+</resultMap>
+<resultMap id="ProductImageMap" type="com.yl.clothing.entity.ProductImage" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="colorId" property="colorId"/>
+    <result column="url" property="url"/>
+    <result column="sortOrder" property="sortOrder"/>
+</resultMap>
+<sql id="productFields">
+p.id,p.code,p.name,p.description,p.category_id AS categoryId,c.name AS categoryName,p.created_at AS createdAt,
+(SELECT COUNT(*) FROM product_color pc WHERE pc.product_id=p.id AND pc.deleted=0) AS colorCount,
+(SELECT MIN(l.price) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id WHERE pc.product_id=p.id AND pc.deleted=0) AS minPrice,
+(SELECT MAX(l.price) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id WHERE pc.product_id=p.id AND pc.deleted=0) AS maxPrice,
+(SELECT COUNT(*) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id WHERE pc.product_id=p.id AND pc.deleted=0 AND l.on_sale=1) AS onSaleCount,
+(SELECT COUNT(*) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id WHERE pc.product_id=p.id AND pc.deleted=0) AS listingCount,
+(SELECT i.url FROM product_image i JOIN product_color pc ON pc.id=i.color_id WHERE pc.product_id=p.id AND pc.deleted=0 ORDER BY pc.id,i.sort_order,i.id LIMIT 1) AS thumbnail
+</sql>
+<sql id="productWhere">
+WHERE p.deleted=0
+<if test="q.keyword != null and q.keyword != ''">AND (p.name LIKE CONCAT('%',#{q.keyword},'%') OR p.code LIKE CONCAT('%',#{q.keyword},'%'))</if>
+<if test="q.categoryId != null">AND p.category_id=#{q.categoryId}</if>
+<if test="q.channelId != null or q.onSale != null">
+AND EXISTS(SELECT 1 FROM product_color pc JOIN sku s ON s.color_id=pc.id JOIN listing l ON l.sku_id=s.id WHERE pc.product_id=p.id AND pc.deleted=0
+<if test="q.channelId != null">AND l.channel_id=#{q.channelId}</if><if test="q.onSale != null">AND l.on_sale=#{q.onSale}</if>)
+</if>
+</sql>
+<select id="list" resultMap="ProductSummaryMap">SELECT <include refid="productFields"/> FROM product p JOIN category c ON c.id=p.category_id <include refid="productWhere"/> ORDER BY p.id DESC LIMIT #{q.limit} OFFSET #{q.offset}</select>
+<select id="count" resultType="long">SELECT COUNT(*) FROM product p <include refid="productWhere"/></select>
+<select id="find" resultMap="ProductSummaryMap">SELECT <include refid="productFields"/> FROM product p JOIN category c ON c.id=p.category_id WHERE p.id=#{id} AND p.deleted=0</select>
+<insert id="insert" useGeneratedKeys="true" keyProperty="id">INSERT INTO product(code,name,description,category_id) VALUES(#{code},#{name},#{description},#{categoryId})</insert>
+<update id="update">UPDATE product <set>
+<if test="v.name != null">name=#{v.name},</if><if test="v.code != null">code=#{v.code},</if>
+<if test="v.description != null">description=#{v.description},</if><if test="v.categoryId != null">category_id=#{v.categoryId},</if>
+</set> WHERE id=#{id} AND deleted=0</update>
+<update id="delete">UPDATE product SET deleted=1 WHERE id=#{id}</update>
+<select id="colors" resultMap="ProductColorMap">SELECT id,product_id AS productId,name,hex1,hex2 FROM product_color WHERE product_id=#{productId} AND deleted=0 ORDER BY id</select>
+<select id="color" resultMap="ProductColorMap">SELECT pc.id,pc.product_id AS productId,pc.name,pc.hex1,pc.hex2 FROM product_color pc JOIN product p ON p.id=pc.product_id WHERE pc.id=#{id} AND pc.deleted=0 AND p.deleted=0</select>
+<insert id="insertColor" useGeneratedKeys="true" keyProperty="id">INSERT INTO product_color(product_id,name,hex1,hex2) VALUES(#{productId},#{name},#{hex1},#{hex2})</insert>
+<update id="updateColor">UPDATE product_color SET name=#{v.name},hex1=#{v.hex1},hex2=#{v.hex2} WHERE id=#{id}</update>
+<update id="deleteColor">UPDATE product_color SET deleted=1 WHERE id=#{id}</update>
+<insert id="createSkus">INSERT INTO sku(color_id,size) VALUES(#{colorId},'S'),(#{colorId},'M'),(#{colorId},'L'),(#{colorId},'XL'),(#{colorId},'XXL')</insert>
+<insert id="createListings">INSERT INTO listing(sku_id,channel_id,price,on_sale) SELECT s.id,c.id,#{price},0 FROM sku s CROSS JOIN channel c WHERE s.color_id=#{colorId}</insert>
+<sql id="listingFrom">FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id JOIN product p ON p.id=pc.product_id JOIN channel c ON c.id=l.channel_id</sql>
+<sql id="listingFields">l.id,l.sku_id AS skuId,l.channel_id AS channelId,c.name AS channelName,l.price,l.on_sale AS onSale,s.size,pc.id AS colorId,pc.name AS colorName,pc.hex1,pc.hex2,p.id AS productId</sql>
+<sql id="listingWhere">WHERE p.id=#{q.productId} AND p.deleted=0 AND pc.deleted=0
+<if test="q.colorId != null">AND pc.id=#{q.colorId}</if><if test="q.channelId != null">AND l.channel_id=#{q.channelId}</if>
+<if test="q.variantSize != null and q.variantSize != ''">AND s.size=#{q.variantSize}</if><if test="q.onSale != null">AND l.on_sale=#{q.onSale}</if>
+</sql>
+<select id="listings" resultMap="ListingDetailsMap">SELECT <include refid="listingFields"/> <include refid="listingFrom"/> <include refid="listingWhere"/> ORDER BY pc.id,s.size,c.id LIMIT #{q.limit} OFFSET #{q.offset}</select>
+<select id="listingCount" resultType="long">SELECT COUNT(*) <include refid="listingFrom"/> <include refid="listingWhere"/></select>
+<select id="listing" resultMap="ListingDetailsMap">SELECT <include refid="listingFields"/> <include refid="listingFrom"/> WHERE l.id=#{id} AND pc.deleted=0 AND p.deleted=0</select>
+<update id="updateListings">UPDATE listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id JOIN product p ON p.id=pc.product_id
+<set><if test="price != null">l.price=#{price},</if><if test="onSale != null">l.on_sale=#{onSale},</if></set>
+WHERE pc.deleted=0 AND p.deleted=0 AND l.id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+</update>
+<select id="images" resultMap="ProductImageMap">SELECT id,color_id AS colorId,url,sort_order AS sortOrder FROM product_image WHERE color_id=#{colorId} ORDER BY sort_order,id</select>
+<select id="image" resultMap="ProductImageMap">SELECT id,color_id AS colorId,url,sort_order AS sortOrder FROM product_image WHERE id=#{id}</select>
+<insert id="insertImage" useGeneratedKeys="true" keyProperty="id">INSERT INTO product_image(color_id,url,sort_order) VALUES(#{colorId},#{url},#{sortOrder})</insert>
+<delete id="deleteImage">DELETE FROM product_image WHERE id=#{id}</delete>
+<update id="sortImage">UPDATE product_image SET sort_order=#{sortOrder} WHERE id=#{id}</update>
+<select id="lockColor" resultType="long">SELECT id FROM product_color WHERE id=#{id} FOR UPDATE</select>
+</mapper>
+

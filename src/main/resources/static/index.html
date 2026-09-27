@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YL商品管理后台</title>
+<meta name="description" content="YL 服装品牌商品、品类、用户与渠道管理后台">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/css/app.css">
+<script type="module" src="/js/app.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="#/products" aria-label="YL 商品管理后台首页"><span class="brand-mark">YL<span>®</span></span><span class="brand-name">商品管理后台<small>COLLECTION MANAGER</small></span></a>
+  <div class="nav-caption">工作空间</div>
+  <nav aria-label="主导航">
+    <a href="#/products" data-nav="products"><span class="nav-icon">▦</span>商品管理</a>
+    <a href="#/categories" data-nav="categories"><span class="nav-icon">⊞</span>品类管理</a>
+    <a href="#/users" data-nav="users"><span class="nav-icon">♙</span>用户管理</a>
+    <a href="#/channels" data-nav="channels"><span class="nav-icon">⌘</span>渠道管理</a>
+  </nav>
+  <div class="sidebar-bottom"><span class="local-dot"></span>本地工作空间<small>Asia / Shanghai</small></div>
+</aside>
+<div class="workspace">
+  <header class="topbar"><span class="breadcrumb" id="breadcrumb">工作空间 / 商品管理</span>
+    <div class="simulators" aria-label="模拟生成控制">
+      <div class="simulator">
+        <div class="simulator-row"><div><label for="data-sim-toggle">模拟数据生成</label><span id="data-sim-description" class="sim-description" role="status">连接中…</span></div>
+          <button id="data-sim-toggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="模拟数据生成" aria-describedby="data-sim-description" disabled><span></span></button>
+        </div>
+        <div class="simulator-row simulator-retention"><div><label for="data-sim-retain-toggle">保留生成的数据</label><span id="data-sim-retain-description" class="sim-description" role="status">连接中…</span></div>
+          <button id="data-sim-retain-toggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="模拟数据生成：保留生成的数据" aria-describedby="data-sim-retain-description" disabled><span></span></button>
+        </div>
+      </div>
+      <div class="simulator">
+        <div class="simulator-row"><div><label for="sim-toggle">模拟订单生成</label><span id="sim-description" class="sim-description" role="status">连接中…</span></div>
+          <button id="sim-toggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="模拟订单生成" aria-describedby="sim-description" disabled><span></span></button>
+        </div>
+        <div class="simulator-row simulator-retention"><div><label for="sim-retain-toggle">保留生成的数据</label><span id="sim-retain-description" class="sim-description" role="status">连接中…</span></div>
+          <button id="sim-retain-toggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="模拟订单生成：保留生成的数据" aria-describedby="sim-retain-description" disabled><span></span></button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div id="connection-banner" class="connection-banner" hidden></div>
+  <main id="app" tabindex="-1"></main>
+  <footer class="footer">YL 商品管理后台 <span>本地演示 · 无需登录</span></footer>
+</div>
+<dialog id="modal"></dialog>
+<div id="toast" role="status" class="toast" hidden></div>
+</body></html>
+
+

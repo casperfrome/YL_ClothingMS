@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.CategoryMapper">
+<resultMap id="CategorySummaryMap" type="com.yl.clothing.entity.projection.CategorySummary" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+    <result column="productCount" property="productCount"/>
+</resultMap>
+<resultMap id="CategoryMap" type="com.yl.clothing.entity.Category" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+</resultMap>
+<select id="all" resultMap="CategorySummaryMap">SELECT c.id,c.name,(SELECT COUNT(*) FROM product p WHERE p.category_id=c.id AND p.deleted=0) AS productCount FROM category c ORDER BY c.id</select>
+<select id="find" resultMap="CategoryMap">SELECT id,name FROM category WHERE id=#{id}</select>
+<insert id="insert" useGeneratedKeys="true" keyProperty="id">INSERT INTO category(name) VALUES(#{name})</insert>
+<update id="rename">UPDATE category SET name=#{name} WHERE id=#{id}</update>
+<select id="references" resultType="int">SELECT COUNT(*) FROM product WHERE category_id=#{id} AND deleted=0</select>
+<update id="unlinkDeletedProducts">UPDATE product SET category_id=NULL WHERE category_id=#{id} AND deleted=1</update>
+<delete id="delete">DELETE FROM category WHERE id=#{id}</delete>
+</mapper>

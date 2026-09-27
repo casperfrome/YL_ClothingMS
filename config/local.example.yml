@@ -1,0 +1,9 @@
+# Copy to config/local.yml and fill in your database password.
+# Local runtime parameters. Environment variables override these values.
+PORT: 8080
+DB_HOST: "127.0.0.1"
+DB_PORT: 3306
+DB_NAME: "YL_260924"
+DB_USER: "root"
+DB_PASSWORD: "YOUR_DATABASE_PASSWORD"
+UPLOAD_DIR: "./data/uploads"

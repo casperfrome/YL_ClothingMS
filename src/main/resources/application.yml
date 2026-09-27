@@ -1,0 +1,29 @@
+server:
+  address: 127.0.0.1
+  port: ${PORT:8080}
+  shutdown: graceful
+spring:
+  config:
+    import: "optional:file:./config/local.yml"
+  application:
+    name: yl-clothing
+  datasource:
+    # Credentials come from config/local.yml or environment variables.
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:YL_260924}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD}
+    hikari:
+      connection-init-sql: SET time_zone = '+08:00'
+  jackson:
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+app:
+  upload-dir: ${UPLOAD_DIR:./data/uploads}

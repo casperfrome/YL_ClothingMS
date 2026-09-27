@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.OrderMapper">
+<resultMap id="OrderDetailsMap" type="com.yl.clothing.entity.projection.OrderDetails" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="orderNo" property="orderNo"/>
+    <result column="userId" property="userId"/>
+    <result column="listingId" property="listingId"/>
+    <result column="channelId" property="channelId"/>
+    <result column="productCode" property="productCode"/>
+    <result column="productName" property="productName"/>
+    <result column="colorName" property="colorName"/>
+    <result column="hex1" property="hex1"/>
+    <result column="hex2" property="hex2"/>
+    <result column="size" property="size"/>
+    <result column="channelName" property="channelName"/>
+    <result column="unitPrice" property="unitPrice"/>
+    <result column="quantity" property="quantity"/>
+    <result column="totalPrice" property="totalPrice"/>
+    <result column="status" property="status"/>
+    <result column="createdAt" property="createdAt"/>
+    <result column="updatedAt" property="updatedAt"/>
+    <result column="phone" property="phone"/>
+    <result column="nickname" property="nickname"/>
+</resultMap>
+<resultMap id="OrderCandidateMap" type="com.yl.clothing.entity.projection.OrderCandidate" autoMapping="false">
+    <result column="listingId" property="listingId"/>
+    <result column="userId" property="userId"/>
+    <result column="channelId" property="channelId"/>
+    <result column="channelName" property="channelName"/>
+    <result column="productCode" property="productCode"/>
+    <result column="productName" property="productName"/>
+    <result column="colorName" property="colorName"/>
+    <result column="hex1" property="hex1"/>
+    <result column="hex2" property="hex2"/>
+    <result column="size" property="size"/>
+    <result column="unitPrice" property="unitPrice"/>
+</resultMap>
+<resultMap id="MutableOrderMap" type="com.yl.clothing.entity.projection.MutableOrder" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="status" property="status"/>
+</resultMap>
+<resultMap id="UserChannelMap" type="com.yl.clothing.entity.UserChannel" autoMapping="false">
+    <result column="userId" property="userId"/>
+    <result column="channelId" property="channelId"/>
+</resultMap>
+<sql id="fields">o.id,o.order_no AS orderNo,o.user_id AS userId,u.phone,u.nickname,
+o.listing_id AS listingId,o.channel_id AS channelId,o.channel_name AS channelName,
+o.product_code AS productCode,o.product_name AS productName,o.color_name AS colorName,o.hex1,o.hex2,o.size,
+o.unit_price AS unitPrice,o.quantity,o.total_price AS totalPrice,o.status,o.created_at AS createdAt,o.updated_at AS updatedAt</sql>
+<sql id="where">WHERE o.user_id=#{q.userId}
+<if test="q.channelId != null">AND o.channel_id=#{q.channelId}</if><if test="q.status != null">AND o.status=#{q.status}</if></sql>
+<select id="list" resultMap="OrderDetailsMap">SELECT <include refid="fields"/> FROM sales_order o JOIN customer u ON u.id=o.user_id <include refid="where"/> ORDER BY o.id DESC LIMIT #{q.limit} OFFSET #{q.offset}</select>
+<select id="count" resultType="long">SELECT COUNT(*) FROM sales_order o <include refid="where"/></select>
+<select id="find" resultMap="OrderDetailsMap">SELECT <include refid="fields"/> FROM sales_order o JOIN customer u ON u.id=o.user_id WHERE o.id=#{id}</select>
+<select id="candidateUserChannel" resultMap="UserChannelMap">
+SELECT uc.user_id AS userId,uc.channel_id AS channelId FROM user_channel uc
+JOIN customer u ON u.id=uc.user_id LEFT JOIN simulation_run r ON r.id=u.simulation_run_id
+WHERE (u.simulation_run_id IS NULL OR u.simulation_run_id=#{runId} OR r.retain_data=TRUE) AND EXISTS (
+ SELECT 1 FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id
+ JOIN product p ON p.id=pc.product_id
+ WHERE l.channel_id=uc.channel_id AND l.on_sale=1 AND pc.deleted=0 AND p.deleted=0
+) ORDER BY RAND() LIMIT 1
+</select>
+<select id="candidateForChannel" resultMap="OrderCandidateMap">
+SELECT l.id AS listingId,#{userId} AS userId,c.id AS channelId,c.name AS channelName,p.code AS productCode,p.name AS productName,
+pc.name AS colorName,pc.hex1,pc.hex2,s.size,l.price AS unitPrice
+FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id
+JOIN product p ON p.id=pc.product_id JOIN channel c ON c.id=l.channel_id
+WHERE l.channel_id=#{channelId} AND l.on_sale=1 AND pc.deleted=0 AND p.deleted=0 ORDER BY RAND() LIMIT 1
+</select>
+<insert id="insert" useGeneratedKeys="true" keyProperty="id">
+INSERT INTO sales_order(order_no,user_id,listing_id,channel_id,product_code,product_name,color_name,hex1,hex2,size,channel_name,unit_price,quantity,total_price,status,created_at,updated_at,simulation_run_id)
+VALUES(#{orderNo},#{userId},#{listingId},#{channelId},#{productCode},#{productName},#{colorName},#{hex1},#{hex2},#{size},#{channelName},#{unitPrice},#{quantity},#{totalPrice},#{status},#{createdAt},#{updatedAt},#{simulationRunId})
+</insert>
+<select id="dueOrders" resultMap="MutableOrderMap">
+SELECT o.id,o.status FROM sales_order o JOIN simulation_run r ON r.id=o.simulation_run_id
+WHERE o.status=#{status} AND o.updated_at &lt;= #{cutoff} AND (o.simulation_run_id=#{runId} OR r.retain_data=TRUE)
+ORDER BY o.updated_at,o.id LIMIT #{limit}
+</select>
+<update id="updateStatus">UPDATE sales_order SET status=#{to},updated_at=#{changedAt} WHERE id=#{id} AND status=#{from}</update>
+<delete id="clearRun">DELETE FROM sales_order WHERE simulation_run_id=#{runId}</delete>
+<select id="total" resultType="long">SELECT COUNT(*) FROM sales_order</select>
+</mapper>
+

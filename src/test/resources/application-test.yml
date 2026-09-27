@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    # Use the same MySQL container, with a separate database for all integration tests.
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/YL_260924_test?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true&useSSL=false
+app:
+  upload-dir: ./target/test-uploads

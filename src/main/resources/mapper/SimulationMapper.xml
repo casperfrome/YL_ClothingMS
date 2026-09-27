@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.SimulationMapper">
+<select id="retainData" resultType="boolean">SELECT retain_data FROM simulation_settings WHERE mode=#{mode}</select>
+<update id="updateSetting">UPDATE simulation_settings SET retain_data=#{retainData} WHERE mode=#{mode}</update>
+<insert id="insertRun" useGeneratedKeys="true" keyProperty="id">
+INSERT INTO simulation_run(mode,retain_data,started_at) VALUES(#{mode},#{retainData},#{startedAt})
+</insert>
+<select id="runRetainData" resultType="boolean">SELECT retain_data FROM simulation_run WHERE id=#{id}</select>
+<update id="updateRunRetainData">UPDATE simulation_run SET retain_data=#{retainData} WHERE id=#{id} AND ended_at IS NULL</update>
+<select id="disposableRunIds" resultType="long">SELECT id FROM simulation_run WHERE retain_data=FALSE ORDER BY id</select>
+<update id="endRun">UPDATE simulation_run SET ended_at=#{endedAt} WHERE id=#{id} AND ended_at IS NULL</update>
+<update id="endRetainedRuns">UPDATE simulation_run SET ended_at=#{endedAt} WHERE retain_data=TRUE AND ended_at IS NULL</update>
+<delete id="deleteRun">DELETE FROM simulation_run WHERE id=#{id} AND retain_data=FALSE</delete>
+</mapper>

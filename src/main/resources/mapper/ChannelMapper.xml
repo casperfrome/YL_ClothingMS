@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.ChannelMapper">
+<resultMap id="ChannelStatisticsMap" type="com.yl.clothing.entity.projection.ChannelStatistics" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="code" property="code"/>
+    <result column="name" property="name"/>
+    <result column="userCount" property="userCount"/>
+    <result column="orderCount" property="orderCount"/>
+    <result column="productCount" property="productCount"/>
+    <result column="onSaleCount" property="onSaleCount"/>
+</resultMap>
+<select id="all" resultMap="ChannelStatisticsMap">
+SELECT c.id,c.name,c.code,
+ (SELECT COUNT(*) FROM user_channel uc WHERE uc.channel_id=c.id) AS userCount,
+ (SELECT COUNT(*) FROM sales_order o WHERE o.channel_id=c.id) AS orderCount,
+ (SELECT COUNT(DISTINCT pc.product_id) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id JOIN product p ON p.id=pc.product_id WHERE l.channel_id=c.id AND pc.deleted=0 AND p.deleted=0) AS productCount,
+ (SELECT COUNT(*) FROM listing l JOIN sku s ON s.id=l.sku_id JOIN product_color pc ON pc.id=s.color_id JOIN product p ON p.id=pc.product_id WHERE l.channel_id=c.id AND pc.deleted=0 AND p.deleted=0 AND l.on_sale=1) AS onSaleCount
+FROM channel c ORDER BY c.id
+</select>
+</mapper>
+

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.clothing.mapper.UserMapper">
+<resultMap id="CustomerSummaryMap" type="com.yl.clothing.entity.projection.CustomerSummary" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="phone" property="phone"/>
+    <result column="nickname" property="nickname"/>
+    <result column="gender" property="gender"/>
+    <result column="birthday" property="birthday"/>
+    <result column="createdAt" property="createdAt"/>
+    <result column="channelCount" property="channelCount"/>
+    <result column="orderCount" property="orderCount"/>
+</resultMap>
+<resultMap id="UserChannelSummaryMap" type="com.yl.clothing.entity.projection.UserChannelSummary" autoMapping="false">
+    <id column="id" property="id"/>
+    <result column="code" property="code"/>
+    <result column="name" property="name"/>
+    <result column="orderCount" property="orderCount"/>
+</resultMap>
+<sql id="fields">u.id,u.phone,u.nickname,u.gender,u.birthday,u.created_at AS createdAt,
+(SELECT COUNT(*) FROM user_channel uc WHERE uc.user_id=u.id) AS channelCount,
+(SELECT COUNT(*) FROM sales_order o WHERE o.user_id=u.id) AS orderCount</sql>
+<select id="list" resultMap="CustomerSummaryMap">SELECT <include refid="fields"/> FROM customer u
+<where><if test="q.phone != null and q.phone != ''">u.phone LIKE CONCAT('%',#{q.phone},'%')</if></where>
+ORDER BY u.id LIMIT #{q.limit} OFFSET #{q.offset}</select>
+<select id="count" resultType="long">SELECT COUNT(*) FROM customer
+<where><if test="phone != null and phone != ''">phone LIKE CONCAT('%',#{phone},'%')</if></where></select>
+<select id="find" resultMap="CustomerSummaryMap">SELECT <include refid="fields"/> FROM customer u WHERE u.id=#{id}</select>
+<select id="channels" resultMap="UserChannelSummaryMap">SELECT c.id,c.name,c.code,(SELECT COUNT(*) FROM sales_order o WHERE o.channel_id=c.id AND o.user_id=#{id}) AS orderCount FROM channel c JOIN user_channel uc ON uc.channel_id=c.id WHERE uc.user_id=#{id} ORDER BY c.id</select>
+<update id="update">UPDATE customer SET phone=#{v.phone},nickname=#{v.nickname},gender=#{v.gender},birthday=#{v.birthday} WHERE id=#{id}</update>
+<select id="channelIds" resultType="long">SELECT id FROM channel ORDER BY id</select>
+<select id="phoneExists" resultType="boolean">SELECT EXISTS(SELECT 1 FROM customer WHERE phone=#{phone})</select>
+<insert id="insertSimulated" useGeneratedKeys="true" keyProperty="id">
+INSERT INTO customer(phone,nickname,gender,birthday,created_at,simulated,simulation_run_id)
+VALUES(#{phone},#{nickname},#{gender},#{birthday},#{createdAt},TRUE,#{simulationRunId})
+</insert>
+<insert id="addChannel">INSERT INTO user_channel(user_id,channel_id) VALUES(#{userId},#{channelId})</insert>
+<delete id="clearSimulationChannels">DELETE uc FROM user_channel uc JOIN customer u ON u.id=uc.user_id WHERE u.simulation_run_id=#{runId}</delete>
+<delete id="clearSimulationUsers">DELETE FROM customer WHERE simulation_run_id=#{runId}</delete>
+</mapper>
+
